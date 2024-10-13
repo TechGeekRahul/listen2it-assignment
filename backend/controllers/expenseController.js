@@ -1,43 +1,7 @@
 const Expense = require('../models/Expense');
 
-
-const categoriesData = [
-  {
-    category: "Essential Expenses",
-    subcategories: [
-      { name: "Housing", icon: "🏠" },
-      { name: "Transportation", icon: "🚗" },
-      { name: "Food", icon: "🍔" },
-      { name: "Utilities and Services", icon: "💡" },
-      { name: "Healthcare", icon: "⚕️" },
-      { name: "Insurance", icon: "📑" },
-      { name: "Debt Repayments", icon: "💳" }
-    ]
-  },
-  {
-    category: "Non-Essential Expenses",
-    subcategories: [
-      { name: "Entertainment and Leisure", icon: "🎉" },
-      { name: "Personal Care", icon: "💅" },
-      { name: "Clothing and Accessories", icon: "👗" }
-    ]
-  },
-  {
-    category: "Savings and Investments",
-    subcategories: [
-      { name: "Savings", icon: "💰" },
-      { name: "Investments", icon: "📈" }
-    ]
-  },
-  {
-    category: "Miscellaneous",
-    subcategories: [
-      { name: "Education and Self-Improvement", icon: "🎓" },
-      { name: "Gifts and Donations", icon: "🎁" },
-      { name: "Miscellaneous", icon: "🛠️" }
-    ]
-  }
-];
+const mongoose = require('mongoose');
+const categoriesData = require('../categories.json');
 
 exports.addExpense = async (req, res) => {
   const { userId, amount, category, subcategory } = req.body;
@@ -74,6 +38,89 @@ exports.getExpenses = async (req, res) => {
   try {
     const expenses = await Expense.find({ userId });
     res.status(200).json(expenses);
+  } catch (error) {
+    res.status(400).json({ error });
+  }
+};
+
+
+
+exports.getAllExpenses = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const expenses = await Expense.find({ userId });
+    res.status(200).json(expenses);
+  } catch (error) {
+    res.status(400).json({ error });
+  }
+};
+
+
+exports.filterByCategory = async (req, res) => {
+  const { userId, category } = req.params;
+
+  try {
+    const expenses = await Expense.find({ userId, category });
+    res.status(200).json(expenses);
+  } catch (error) {
+    res.status(400).json({ error });
+  }
+};
+
+
+exports.filterBySubcategory = async (req, res) => {
+  const { userId, subcategory } = req.params;
+  console.log(`Filtering expenses for userId: ${userId}, subcategory: ${subcategory}`);
+
+  try {
+    const expenses = await Expense.find({ userId, subcategory });
+    console.log('Filtered expenses:', expenses);
+    res.status(200).json(expenses);
+  } catch (error) {
+    console.error('Error fetching expenses:', error);
+    res.status(400).json({ error });
+  }
+};
+
+
+exports.getMonthlyStatistics = async (req, res) => {
+  const { userId } = req.params;
+  console.log(`Fetching monthly statistics for userId: ${userId}`);
+
+  try {
+    const stats = await Expense.aggregate([
+      { $match: { userId: new mongoose.Types.ObjectId(userId) } },
+      {
+        $group: {
+          _id: { $month: "$date" },
+          totalAmount: { $sum: "$amount" }
+        }
+      }
+    ]);
+    console.log('Monthly statistics:', stats);
+    res.status(200).json(stats);
+  } catch (error) {
+    console.error('Error fetching monthly statistics:', error);
+    res.status(400).json({ error });
+  }
+};
+
+
+exports.getWeeklyStatistics = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const stats = await Expense.aggregate([
+      { $match: { userId: new mongoose.Types.ObjectId(userId) } },
+      {
+        $group: {
+          _id: { $week: "$date" },
+          totalAmount: { $sum: "$amount" }
+        }
+      }
+    ]);
+    res.status(200).json(stats);
   } catch (error) {
     res.status(400).json({ error });
   }

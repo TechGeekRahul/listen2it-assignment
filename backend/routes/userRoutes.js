@@ -6,17 +6,36 @@ const User = require('../models/User');
 
 
 router.post('/register', async (req, res) => {
-   const { email, password } = req.body;
-   const hashedPassword = await bcrypt.hash(password, 10);
+    const { email, password } = req.body;
 
-   const newUser = new User({ email, passwordHash: hashedPassword });
-   try {
-       await newUser.save();
-       res.status(201).json(newUser);
-   } catch (error) {
-       res.status(400).json({ error });
-   }
+    
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+        return res.status(400).json({ error: 'User already exists' });
+    }
+
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = new User({ email, passwordHash: hashedPassword });
+    
+    try {
+        await newUser.save();
+        
+        
+        const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+        
+        res.status(201).json({ token });
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
 });
+
+
+
+
+const jwt = require('jsonwebtoken');
 
 
 router.post('/login', async (req, res) => {
@@ -27,9 +46,10 @@ router.post('/login', async (req, res) => {
        return res.status(401).json({ error: 'Invalid credentials' });
    }
 
-   
 
-   res.status(200).json(user); 
+   const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+   res.status(200).json({ token }); 
 });
 
 module.exports = router;

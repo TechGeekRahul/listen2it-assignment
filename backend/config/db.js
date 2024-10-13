@@ -3,7 +3,7 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
-const uri = "mongodb+srv://singhrahulkumar820:listentoit@cluster0.h0rov.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+const uri = process.env.MONGO_URI;
 
 const connectDB = async () => {
   try {
