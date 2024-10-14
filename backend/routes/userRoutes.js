@@ -38,18 +38,19 @@ router.post('/register', async (req, res) => {
 const jwt = require('jsonwebtoken');
 
 
+// Example of a login endpoint in your backend
 router.post('/login', async (req, res) => {
-   const { email, password } = req.body;
-   const user = await User.findOne({ email });
-
-   if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
-       return res.status(401).json({ error: 'Invalid credentials' });
-   }
-
-
-   const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
-   res.status(200).json({ token }); 
-});
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
+  
+    if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+  
+    // Generate JWT token
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  
+    res.status(200).json({ token, userId: user._id }); // Return both token and userId
+  });
 
 module.exports = router;
