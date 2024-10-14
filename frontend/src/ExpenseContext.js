@@ -20,9 +20,9 @@ export const ExpenseProvider = ({ children }) => {
     
     const fetchExpenses = async () => {
       if (token) {
-        const userId = localStorage.getItem('userId'); // Get userId from local storage
+        const userId = localStorage.getItem('userId'); 
         try {
-          const response = await axios.get(`http://localhost:5000/api/expenses/${userId}`, {
+          const response = await axios.get(`https://listen2it-assignment.onrender.com/api/expenses/${userId}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           console.log("Fetched expenses:", response.data); 
@@ -41,8 +41,8 @@ export const ExpenseProvider = ({ children }) => {
 
 const addExpense = async (expense) => {
   try {
-    const userId = localStorage.getItem('userId'); // Get userId from local storage
-    const response = await axios.post(`http://localhost:5000/api/expenses/add`, {
+    const userId = localStorage.getItem('userId'); 
+    const response = await axios.post(`https://listen2it-assignment.onrender.com/api/expenses/add`, {
       ...expense,
       userId, 
     }, {
@@ -83,7 +83,7 @@ const addExpense = async (expense) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post('http://localhost:5000/api/users/login', { email, password });
+      const response = await axios.post('https://listen2it-assignment.onrender.com/api/users/login', { email, password });
       const { token, userId } = response.data; 
       setToken(token);
       localStorage.setItem('token', token); 
@@ -96,7 +96,7 @@ const addExpense = async (expense) => {
 
   const register = async (email, password) => {
     try {
-      await axios.post('http://localhost:5000/api/users/register', { email, password });
+      await axios.post('https://listen2it-assignment.onrender.com/api/users/register', { email, password });
     
       setIsRegistering(false);
     } catch (error) {
