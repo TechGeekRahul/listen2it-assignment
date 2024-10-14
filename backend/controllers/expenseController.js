@@ -1,4 +1,4 @@
-const Expense = require('../models/Expense');
+const Expense = require('../models/expense');
 
 const mongoose = require('mongoose');
 const categoriesData = require('../categories.json');
