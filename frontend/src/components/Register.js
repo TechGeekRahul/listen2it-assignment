@@ -1,11 +1,11 @@
 // src/components/Register.js
 import React, { useState, useContext } from 'react';
 import { ExpenseContext } from '../ExpenseContext';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { useNavigate } from 'react-router-dom';
 
 const Register = () => {
   const { register } = useContext(ExpenseContext);
-  const navigate = useNavigate(); // Initialize navigate
+  const navigate = useNavigate(); 
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

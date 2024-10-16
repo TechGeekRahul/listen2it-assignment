@@ -1,20 +1,16 @@
-
+// src/components/WeeklyExpensesChart.js
 import React from 'react';
-import { Bar } from 'react-chartjs-2';
-
-import { Chart, registerables } from 'chart.js'
-
-Chart.register(...registerables)
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
 
 const WeeklyExpensesChart = ({ expenses }) => {
- 
+  // Function to calculate daily expenses for the current week
   const calculateWeeklyExpenses = () => {
     const today = new Date();
     const weekDays = Array.from({ length: 7 }, (_, i) => {
       const date = new Date(today);
-      date.setDate(today.getDate() - i);
-      return date.toISOString().split('T')[0]; 
-    }).reverse(); 
+      date.setDate(today.getDate() - (6 - i)); // Adjust to get Sunday to Saturday
+      return date; // Return the Date object directly
+    }); // No need to reverse
 
     const weeklyData = {
       essential: Array(7).fill(0),
@@ -24,8 +20,8 @@ const WeeklyExpensesChart = ({ expenses }) => {
     };
 
     expenses.forEach(expense => {
-      const expenseDate = expense.date.split('T')[0]; 
-      const dayIndex = weekDays.indexOf(expenseDate);
+      const expenseDate = new Date(expense.date.split('T')[0]); // Convert to Date object
+      const dayIndex = weekDays.findIndex(day => day.toISOString().split('T')[0] === expenseDate.toISOString().split('T')[0]);
       
       if (dayIndex !== -1) {
         switch (expense.category) {
@@ -52,51 +48,46 @@ const WeeklyExpensesChart = ({ expenses }) => {
 
   const { weekDays, essential, nonEssential, miscellaneous, savings } = calculateWeeklyExpenses();
 
- 
-  const data = {
-    labels: weekDays,
-    datasets: [
-      {
-        label: 'Essential Expenses',
-        data: essential,
-        backgroundColor: '#36A2EB',
-      },
-      {
-        label: 'Non-Essential Expenses',
-        data: nonEssential,
-        backgroundColor: '#FF6384',
-      },
-      {
-        label: 'Miscellaneous',
-        data: miscellaneous,
-        backgroundColor: '#FFCE56',
-      },
-      {
-        label: 'Savings & Investments',
-        data: savings,
-        backgroundColor: '#4BC0C0',
-      },
-    ],
-  };
+  // Format the week days for display
+  const formattedWeekDays = weekDays.map((date, index) => {
+    const options = { day: 'numeric', month: 'short' };
+    if (index === 6) return "Today"; 
+    if (index === 5) return "Yesterday"; 
+    return date.toLocaleDateString('en-US', options);
+  });
 
- 
-  const options = {
-    responsive: true,
-    scales: {
-      x: {
-        stacked: true,
-      },
-      y: {
-        stacked: true,
-        beginAtZero: true,
-      },
-    },
-  };
+
+  const data = formattedWeekDays.map((day, index) => ({
+    name: day,
+    essential: essential[index],
+    nonEssential: nonEssential[index],
+    miscellaneous: miscellaneous[index],
+    savings: savings[index],
+    total: essential[index] + nonEssential[index] + miscellaneous[index] + savings[index], 
+  }));
 
   return (
-    <div className="p-4 bg-white rounded shadow mb-4">
-      <h3 className="text-lg font-bold">Weekly Expenses</h3>
-      <Bar data={data} options={options} />
+    <div className="bg-gray-50 p-6 rounded-xl">
+    
+      <ResponsiveContainer width="100%" height={300}>
+        <BarChart data={data}>
+          <XAxis dataKey="name" />
+          <YAxis />
+          <Tooltip />
+          <Bar dataKey="essential" stackId="a" fill="#4ade80">
+            <LabelList dataKey="total" position="top" formatter={(value) => `₹${value.toFixed(2)}`} />
+          </Bar>
+          <Bar dataKey="nonEssential" stackId="a" fill="#facc15">
+            <LabelList dataKey="total" position="top" formatter={(value) => `₹${value.toFixed(2)}`} />
+          </Bar>
+          <Bar dataKey="miscellaneous" stackId="a" fill="#d1d5db">
+            <LabelList dataKey="total" position="top" formatter={(value) => `₹${value.toFixed(2)}`} />
+          </Bar>
+          <Bar dataKey="savings" stackId="a" fill="#4BC0C0">
+            <LabelList dataKey="total" position="top" formatter={(value) => `₹${value.toFixed(2)}`} />
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
     </div>
   );
 };

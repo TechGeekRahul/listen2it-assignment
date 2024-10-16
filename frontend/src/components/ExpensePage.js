@@ -1,13 +1,16 @@
-
+// src/components/ExpensesPage.js
 import React, { useContext, useEffect, useState } from 'react';
 import { ExpenseContext } from '../ExpenseContext';
 import { useNavigate } from 'react-router-dom';
-import Modal from './Modal'; 
-import Stats from './Stats';
+import Modal from './Modal'; // Import the Modal component
+import Stats from './Stats'; // Import Stats component
 import WeeklyExpensesChart from './WeeklyExpenseChart'; // Import WeeklyExpensesChart component
+import TransactionsList from './TransactionsList'; // Import TransactionsList component
+import ProfileIcon from './ProfileIcon';
+import AddExpenseButton from './AddExpenseButton'; // Import AddExpenseButton
 
 const ExpensesPage = () => {
-  const { expenses, addExpense, logout } = useContext(ExpenseContext);
+  const { expenses, addExpense } = useContext(ExpenseContext);
   const navigate = useNavigate();
 
   // State for the new expense and modal visibility
@@ -20,7 +23,7 @@ const ExpensesPage = () => {
   const [filterCategory, setFilterCategory] = useState('');
   const [filterSubcategory, setFilterSubcategory] = useState('');
 
-
+  // Predefined categories and subcategories
   const categoriesData = [
     {
       category: "Essential Expenses",
@@ -48,8 +51,18 @@ const ExpensesPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!amount || !category || !subcategory) return;
+
+    // Validate inputs
+    if (!amount || !category || !subcategory) {
+        alert("Please fill in all fields.");
+        return;
+    }
+
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+        alert("Please enter a valid amount.");
+        return;
+    }
 
     // Create a new expense object with current date and emoji
     const emojiMap = {
@@ -69,24 +82,29 @@ const ExpensesPage = () => {
     };
 
     const newExpense = {
-      amount: parseFloat(amount),
+      amount: parsedAmount,
       category,
       subcategory,
       date: new Date().toISOString(), // Store current date in ISO format
       emoji: emojiMap[subcategory] || '📝' // Add emoji based on subcategory
     };
 
-    // Add expense using context method
-    await addExpense(newExpense); // Ensure this is awaited
+    try {
+        // Add expense using context method
+        await addExpense(newExpense); // Ensure this is awaited
 
-    // Reset form fields and close modal
-    setAmount('');
-    setCategory('');
-    setSubcategory('');
-    setIsModalOpen(false);
-  };
+        // Reset form fields and close modal
+        setAmount('');
+        setCategory('');
+        setSubcategory('');
+        setIsModalOpen(false);
+    } catch (error) {
+        console.error("Error adding expense:", error);
+        alert("Failed to add expense. Please try again.");
+    }
+};
 
-
+  // Filtered expenses based on selected filters
   const filteredExpenses = expenses.filter(expense => {
     const matchesCategory = filterCategory ? expense.category === filterCategory : true;
     const matchesSubcategory = filterSubcategory ? expense.subcategory === filterSubcategory : true;
@@ -94,112 +112,109 @@ const ExpensesPage = () => {
   });
 
   return (
-    <div className="flex flex-col md:flex-row">
+    <div className="p-6 max-w-6xl mx-auto bg-white rounded-xl shadow-md">
+        <ProfileIcon />
       
-    
-       <div className="w-full md:w-1/3 p-4">
-         <Stats expenses={expenses} />
-         <WeeklyExpensesChart expenses={expenses} />
-       </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Left Section */}
+        <div className="md:col-span-2 space-y-6">
+          <div className="bg-gray-50 p-6 rounded-xl">
+            <h2 className="text-lg font-semibold mb-4">This Month</h2>
+            <Stats expenses={expenses} />
+          </div>
+          <div className="bg-gray-50 p-6 rounded-xl">
+            <h2 className="text-lg font-semibold mb-4">Last Week</h2>
+            <WeeklyExpensesChart expenses={expenses} />
+          </div>
+        </div>
 
+        {/* Right Section */}
+        <div className="bg-gray-50 p-6 rounded-xl">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold">Transactions</h2>
+            <select value={filterCategory} onChange={(e) => {
+                setFilterCategory(e.target.value);
+                setFilterSubcategory(''); // Reset subcategory when category changes
+                setSubcategory(''); // Reset selected subcategory when category changes
+              }} className="border p-2 rounded w-48 mb-2">
+              <option value="">All Categories</option>
+              {categoriesData.map((cat) => (
+                <option key={cat.category} value={cat.category}>{cat.category}</option>
+              ))}
+            </select>
+          </div>
 
-       <div className="w-full md:w-2/3 p-4 bg-white rounded shadow">
-         <div className="flex justify-between items-center mb-4">
-           <h2 className="text-lg font-bold">Your Expenses</h2>
-           <button 
-             onClick={() => {
-               logout();
-               navigate('/'); 
-             }} 
-             className="bg-red-500 text-white p-2 rounded"
-           >
-             Logout
-           </button>
-         </div>
+          {/* Subcategory Buttons */}
+          {filterCategory && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {categoriesData.find(cat => cat.category === filterCategory)?.subcategories.map((subcat) => (
+                <button 
+                  key={subcat} 
+                  onClick={() => {
+                    setFilterSubcategory(subcat);
+                    setSubcategory(subcat); // Set selected subcategory for adding expenses
+                  }} 
+                  className={`px-4 py-2 rounded text-white ${filterSubcategory === subcat ? 'bg-blue-600' : 'bg-blue-500'} hover:bg-blue-600 transition duration-200`}
+                >
+                  {subcat}
+                </button>
+              ))}
+            </div>
+          )}
 
-    
-         <div className="mb-4">
-           <h3 className="text-md font-semibold">Filters</h3>
-           
-    
-           <select value={filterCategory} onChange={(e) => {
-               setFilterCategory(e.target.value);
-               setFilterSubcategory(''); 
-             }} className="border p-2 rounded w-full mb-2">
-             <option value="">All Categories</option>
-             {categoriesData.map((cat) => (
-               <option key={cat.category} value={cat.category}>{cat.category}</option>
-             ))}
-           </select>
+          {/* Transactions List */}
+          <TransactionsList transactions={filteredExpenses} />
+        </div>
+      </div>
 
-    
-           <select value={filterSubcategory} onChange={(e) => setFilterSubcategory(e.target.value)} className="border p-2 rounded w-full mb-2" disabled={!filterCategory}>
-             <option value="">All Subcategories</option>
-             {categoriesData.find(cat => cat.category === filterCategory)?.subcategories.map((subcat) => (
-               <option key={subcat} value={subcat}>{subcat}</option>
-             ))}
-           </select>
-         </div>
+      {/* Add Expense Button Component */}
+      <AddExpenseButton onClick={() => setIsModalOpen(true)} />
 
-        
-         <button 
-           onClick={() => setIsModalOpen(true)} 
-           className="bg-blue-500 text-white p-2 rounded mb-4"
-         >
-           Add Expense
-         </button>
+      {/* Add Expense Modal */}
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+        <form onSubmit={handleSubmit}>
+          <h3 className="text-md font-semibold">Add New Expense</h3>
+          <input
+            type="number"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="Amount"
+            className="border p-2 rounded w-full mb-2"
+            required
+          />
+          
+          {/* Category Dropdown */}
+          <select value={category} onChange={(e) => {
+              setCategory(e.target.value);
+              setSubcategory(''); // Reset subcategory when category changes
+              }} className="border p-2 rounded w-full mb-2" required>
+            <option value="">Select Category</option>
+            {categoriesData.map((cat) => (
+              <option key={cat.category} value={cat.category}>{cat.category}</option>
+            ))}
+          </select>
 
-        
-         <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-           <form onSubmit={handleSubmit}>
-             <h3 className="text-md font-semibold">Add New Expense</h3>
-             <input
-               type="number"
-               value={amount}
-               onChange={(e) => setAmount(e.target.value)}
-               placeholder="Amount"
-               className="border p-2 rounded w-full mb-2"
-               required
-             />
-             
-            
-             <select value={category} onChange={(e) => {
-                 setCategory(e.target.value);
-                 setSubcategory(''); // Reset subcategory when category changes
-               }} className="border p-2 rounded w-full mb-2" required>
-               <option value="">Select Category</option>
-               {categoriesData.map((cat) => (
-                 <option key={cat.category} value={cat.category}>{cat.category}</option>
-               ))}
-             </select>
+          {/* Subcategory Display as Buttons */}
+          {category && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {categoriesData.find(cat => cat.category === category)?.subcategories.map((subcat) => (
+                <button 
+                  key={subcat} 
+                  onClick={() => setSubcategory(subcat)} 
+                  className={`px-4 py-2 rounded text-white ${subcategory === subcat ? 'bg-blue-600' : 'bg-blue-500'} hover:bg-blue-600 transition duration-200`}
+                >
+                  {subcat}
+                </button>
+              ))}
+            </div>
+          )}
 
-        
-             <select value={subcategory} onChange={(e) => setSubcategory(e.target.value)} className="border p-2 rounded w-full mb-2" required disabled={!category}>
-               <option value="">Select Subcategory</option>
-               {categoriesData.find(cat => cat.category === category)?.subcategories.map((subcat) => (
-                 <option key={subcat} value={subcat}>{subcat}</option>
-               ))}
-             </select>
+          <button type="submit" className="bg-blue-500 text-white p-2 rounded">Add Expense</button>
+        </form>
+      </Modal>
 
-             <button type="submit" className="bg-blue-500 text-white p-2 rounded">Add Expense</button>
-           </form>
-         </Modal>
-
-        
-         <ul>
-           {filteredExpenses.length > 0 ? (
-             filteredExpenses.map((expense, index) => (
-               <li key={index} className="border-b py-2">
-                 {expense.emoji} {expense.category} - {expense.subcategory}: ₹{expense.amount}
-               </li>
-             ))
-           ) : (
-             <li>No expenses found.</li>
-           )}
-         </ul>
-       </div>
-     </div>
-   );
+    </div>
+  );
 };
 
-export default ExpensesPage;
+export default ExpensesPage; 
